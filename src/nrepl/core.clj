@@ -33,19 +33,16 @@
   )
 
 (defn send-repl-message [repl message] 
-  (println "sending" message)
   (let [client (repl/client repl 1000)
         message-returned (repl/message client message)
         full-status (lazy-to-string message-returned)
         ]
-    (println message-returned)
     (get-value-or-error message-returned)))
 
 
 (defn receive-and-send [server repl] 
   (let [socket (.accept server)
         message (receive-message socket)]
-    (println message)
     (send-message socket (str (send-repl-message repl (read-string message))))
     (.close socket)
     (receive-and-send server repl)))
@@ -62,3 +59,4 @@
   (println "started server" ports))
 
 
+; echo "{:op :eval :code \"media-list\" :ns \"server.scraper\"}" | nc localhost 19191
