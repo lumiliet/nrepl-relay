@@ -8,7 +8,6 @@
   (:gen-class))
 
 
-
 (defn receive-message [socket]
   (.readLine (io/reader socket)))
 
@@ -17,16 +16,30 @@
       (.write writer msg)
       (.flush writer)))
 
+(defn find-keyword-in-collection [coll keyw] 
+  (reduce
+    (fn [prev this] (or prev (keyw this)) )
+    false
+    coll))
+
+
+(defn get-value-or-error [message] 
+  (some identity (map #(find-keyword-in-collection message %) [:value :err]))
+  )
+
+
+(defn lazy-to-string [lazy] 
+  (with-out-str (pprint/pprint (doall lazy)))
+  )
+
 (defn send-repl-message [repl message] 
+  (println "sending" message)
   (let [client (repl/client repl 1000)
         message-returned (repl/message client message)
-        full-status (with-out-str (pprint/pprint (doall message-returned)))
-        response-values (repl/response-values message-returned)
+        full-status (lazy-to-string message-returned)
         ]
-    (if (empty? response-values)
-      full-status
-      response-values
-      )))
+    (println message-returned)
+    (get-value-or-error message-returned)))
 
 
 (defn receive-and-send [server repl] 
@@ -47,8 +60,5 @@
       (receive-and-send server repl)))
 
   (println "started server" ports))
-
-
-(def verdi "heisann")
 
 
