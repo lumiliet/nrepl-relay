@@ -65,18 +65,24 @@
 
 
 (defn send-message-to-client [message] 
-  (if (is-message-valid message)
-    (repl/message
-      (get-repl-client (Integer. (:port message)))
-      (make-nrepl-message message))
-    [{:err "Empty code"}]))
+  (try 
+    (if (is-message-valid message)
+      (repl/message
+        (get-repl-client (Integer. (:port message)))
+        (make-nrepl-message message))
+      [{:err "Empty code"}])
+    (catch Exception e [{:err (str e)}])
+  ))
 
+(defn print-pipe [pipe] 
+  (println pipe)
+  pipe)
 
 (defn send-repl-message [message] 
   (try (-> (json/read-json message)
            send-message-to-client
            get-value-or-error)
-       (catch Exception e "Everything is fucked")))
+       (catch Exception e (str e))))
 
 
 (defn server-loop [server] 
