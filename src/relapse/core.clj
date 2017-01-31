@@ -87,10 +87,13 @@
 
 (defn server-loop [server] 
   (let [socket (.accept server)]
+
     (future
-      (->> (receive-message socket)
-           send-repl-message
-           (send-message socket))
+      (if (.matches (.. socket getRemoteSocketAddress toString) ".*127.0.0.1.*")
+        (->> (receive-message socket)
+             send-repl-message
+             (send-message socket))
+        (send-message socket "denied"))
       (.close socket)))
   (server-loop server))
 
