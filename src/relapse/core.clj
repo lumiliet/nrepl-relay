@@ -45,6 +45,11 @@
     client))
 
 
+(defn delete-repl-client [port]
+  (swap! nrepl-clients #(dissoc % (Integer. port)))
+  )
+
+
 
 
 (defn get-repl-client [port] 
@@ -78,11 +83,17 @@
   (println pipe)
   pipe)
 
-(defn send-repl-message [message] 
-  (try (-> (json/read-json message)
-           send-message-to-client
-           get-value-or-error)
-       (catch Exception e (str e))))
+(defn send-repl-message [message-string] 
+  (let [message (json/read-json message-string)]
+    (try (-> message
+        send-message-to-client
+        get-value-or-error)
+         (catch java.net.SocketException e
+           (delete-repl-client (:port message))
+           (str e))
+       (catch Exception e
+         (println e)
+         (str e)))))
 
 
 (defn server-loop [server] 
